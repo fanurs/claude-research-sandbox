@@ -60,7 +60,7 @@ Each Claude session follows a strict protocol:
 1. **Orient** — Read state files (journal, summary, plan, next action)
 2. **Scope** — Pick ONE objective for the session
 3. **Work** — Code, experiment, analyze
-4. **Record** — Save artifacts, write notes
+4. **Report** — Write a research diary entry with plots and analysis
 5. **Handoff** — Update journal, write next action for the following session
 
 State is managed through simple markdown files that serve as cross-session memory. The journal compresses automatically when it gets too long.
@@ -88,7 +88,9 @@ your-project/
 ├── src/                   # Research code
 ├── data/                  # Datasets
 ├── checkpoints/           # Model checkpoints
-├── results/               # Evaluation results
+├── reports/               # Session reports with figures (research diary)
+│   └── figures/           # Plots and visualizations
+├── results/               # Evaluation results (JSON)
 ├── notes/                 # Research notes
 └── logs/                  # Session logs (text + JSON)
 ```

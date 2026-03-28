@@ -89,6 +89,7 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
    | checkpoints/ | Model checkpoints |
    | results/ | Evaluation results (JSON) |
    | notes/ | Research notes |
+   | reports/ | Session reports with figures (research diary) |
    | logs/ | Session logs (text + JSON) |
    | state/ | Cross-session memory |
    | prompts/ | Immutable instructions |
@@ -139,7 +140,7 @@ The container has uv installed. The first autonomous session will run `uv sync` 
 ### 3d. Create runtime directories
 
 ```bash
-mkdir -p state logs notes results checkpoints data src
+mkdir -p state logs notes results checkpoints data src reports/figures
 ```
 
 ## Phase 4: Build and Start
@@ -172,10 +173,13 @@ After confirmation, test with:
 docker exec <project>-sandbox claude --dangerously-skip-permissions -p "Say hello" --output-format json
 ```
 
-Then tell the user how to start the loop:
+Then tell the user:
 ```
-To start: docker exec <project>-sandbox tmux new -d -s research /workspace/loop.sh
-To watch: docker exec -it <project>-sandbox tmux attach -t research
-To stop:  touch state/STOP
-Status:   ./scripts/status.sh
+All set! To start the autonomous research loop:
+  ./scripts/start-loop.sh
+
+To watch:    docker exec -it <project>-sandbox tmux attach -t research
+To stop:     touch state/STOP
+Status:      ./scripts/status.sh
+Reports:     ls reports/
 ```
