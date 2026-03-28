@@ -1,0 +1,26 @@
+services:
+  sandbox:
+    build: .
+    container_name: __PROJECT_NAME__-sandbox
+    init: true
+    restart: unless-stopped
+    shm_size: 16g
+    ipc: host
+    volumes:
+      - .:/workspace
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
