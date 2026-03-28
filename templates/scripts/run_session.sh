@@ -24,6 +24,7 @@ Start now by reading your state files."
 # Run claude — stream NDJSON in real-time, save to file and show in tmux
 claude --dangerously-skip-permissions \
   -p "$PROMPT" \
+  --verbose \
   --output-format stream-json \
   2>>"$TEXT_LOG" | tee "$JSON_LOG"
 
