@@ -21,30 +21,13 @@ Follow the session protocol exactly:
 
 Start now by reading your state files."
 
-# Run claude — capture JSON output, tee text to log
+# Run claude — stream NDJSON in real-time, save to file and show in tmux
 claude --dangerously-skip-permissions \
   -p "$PROMPT" \
-  --output-format json \
-  > "$JSON_LOG" 2>>"$TEXT_LOG"
+  --output-format stream-json \
+  2>>"$TEXT_LOG" | tee "$JSON_LOG"
 
-EXIT_CODE=$?
-
-# Extract the text result from JSON for the text log
-if command -v python3 &>/dev/null; then
-  python3 -c "
-import json, sys
-try:
-    data = json.load(open('$JSON_LOG'))
-    if isinstance(data, dict) and 'result' in data:
-        print(data['result'])
-    elif isinstance(data, dict) and 'message' in data:
-        print(data['message'])
-    else:
-        print(json.dumps(data, indent=2)[:2000])
-except:
-    print('(could not parse JSON output)')
-" >> "$TEXT_LOG" 2>/dev/null
-fi
+EXIT_CODE=${PIPESTATUS[0]}
 
 echo "" >> "$TEXT_LOG"
 echo "=== Session ended at $(date +%Y-%m-%d_%H-%M-%S) exit=${EXIT_CODE} ===" | tee -a "$TEXT_LOG"
