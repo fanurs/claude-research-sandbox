@@ -2,97 +2,124 @@
 name: research-sandbox
 description: Create a sandboxed autonomous research environment with Docker, GPU access, and a multi-session Claude loop. Use when the user wants to set up an autonomous research project.
 user-invocable: true
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 ---
 
 # Research Sandbox Skill
 
-You are setting up an autonomous research environment. This creates a Docker sandbox with GPU access where Claude sessions loop autonomously — each session does one piece of research, logs findings, and passes instructions to the next session.
+You are scaffolding a Docker sandbox for autonomous research. Your job is to get the container running FAST. Do NOT do deep research — the autonomous loop will handle that later.
 
-## Phase 1: Gather Information
+## Phase 1: Ask the User
 
-Ask the user the following (one message, keep it concise):
+In ONE message, ask:
+1. **"What is your research question?"**
+2. **Suggest a project name** (short slug like `smiles-retrieval`) and confirm.
+3. Only ask clarifying questions if truly ambiguous. Keep it brief.
 
-1. **"What is your research question?"** — This is the core question. Get a clear, specific statement.
-
-Then, based on their answer:
-
-2. **Suggest a project name** (short lowercase slug, e.g., `smiles-retrieval`, `protein-folding`) and ask if it's OK.
-3. Ask **1-2 clarifying questions** if the research question is ambiguous (datasets to use, specific approaches to try, success criteria, etc.). Skip if the question is already clear.
-
-Wait for the user's answers before proceeding.
+Wait for answers before proceeding.
 
 ## Phase 2: Environment Detection
 
-Run these checks silently:
-
+Run silently:
 ```bash
-# Get host UID/GID for container user
-HOST_UID=$(id -u)
-HOST_GID=$(id -g)
-
-# Check Docker
+HOST_UID=$(id -u) && echo "UID=$HOST_UID"
+HOST_GID=$(id -g) && echo "GID=$HOST_GID"
 docker --version
-
-# Check GPU support
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "NO_GPU"
-
-# Check nvidia-container-toolkit
-dpkg -l | grep nvidia-container-toolkit || echo "NO_NVIDIA_TOOLKIT"
+dpkg -l | grep nvidia-container-toolkit 2>/dev/null || echo "NO_NVIDIA_TOOLKIT"
 ```
 
-If Docker is missing, stop and tell the user. If GPU/nvidia-toolkit is missing, warn but continue (remove GPU sections from docker-compose.yml).
+If Docker is missing, stop. If no GPU, warn and continue (remove `deploy:` section from compose later).
 
-## Phase 3: Scaffold the Project
+## Phase 3: Scaffold
 
-The current working directory is the project directory. Create the full structure:
+### 3a. Copy templates with substitution
 
-### 3a. Copy static templates
+Read each file from `${CLAUDE_SKILL_DIR}/templates/` and write it to the current directory, replacing:
+- `__PROJECT_NAME__` → project slug
+- `__UID__` → host UID
+- `__GID__` → host GID
 
-Copy all files from `${CLAUDE_SKILL_DIR}/templates/` into the current directory, preserving structure. The templates contain these placeholders that MUST be replaced:
+Mapping:
+- `templates/Dockerfile` → `Dockerfile`
+- `templates/docker-compose.yml.template` → `docker-compose.yml`
+- `templates/loop.sh` → `loop.sh`
+- `templates/scripts/*` → `scripts/*`
+- `templates/prompts/*` → `prompts/*`
 
-- `__PROJECT_NAME__` → the project name slug (e.g., `smiles-retrieval`)
-- `__UID__` → host user's UID
-- `__GID__` → host user's GID
+Make `loop.sh` and all `scripts/*.sh` executable.
 
-Files to copy and substitute:
-- `Dockerfile` (substitute `__UID__`, `__GID__`)
-- `docker-compose.yml.template` → `docker-compose.yml` (substitute `__PROJECT_NAME__`)
-- `loop.sh` (no substitution needed)
-- `scripts/*` (substitute `__PROJECT_NAME__` in all scripts)
-- `prompts/02-session-protocol.md` (no substitution needed)
-- `prompts/03-evaluation.md` (no substitution needed)
+If NO GPU, remove the `deploy:` block from docker-compose.yml.
 
-**If NO GPU was detected**, remove the entire `deploy:` section from docker-compose.yml after copying.
+### 3b. Generate lightweight research-specific files
 
-### 3b. Generate research-specific files
+Write these based on your existing knowledge — do NOT do web searches. Keep them SHORT (each under 40 lines). They will be refined by the autonomous sessions later.
 
-These files are NOT templates — generate them based on the research question. Use web search and your knowledge to write high-quality content.
+1. **`prompts/00-context.md`** — Brief problem statement:
+   - What the research question is and why it matters (2-3 paragraphs)
+   - Any datasets/resources the user mentioned
+   - Known state of the art (rough, from your knowledge)
 
-1. **`prompts/00-context.md`** — Research background:
-   - Problem description and why it matters
-   - Relevant datasets (URLs, sizes, formats)
-   - Current state of the art (methods, benchmarks, numbers)
-   - Key papers and resources
+2. **`prompts/01-research-directions.md`** — Starter list of approaches:
+   - Priority 1: "Understand the data and establish baselines"
+   - 2-3 more directions worth exploring
+   - Note: "This list should be refined after the first few sessions"
 
-2. **`prompts/01-research-directions.md`** — Ordered list of approaches:
-   - Priority 1 should always be "understand the data/baseline"
-   - Then increasingly sophisticated approaches
-   - Include GitHub repos, paper links, HuggingFace models where relevant
+3. **`CLAUDE.md`** — Project instructions (use this structure):
+   ```
+   # <Project Name> — Autonomous Research
 
-3. **`CLAUDE.md`** — Project-level instructions:
-   - Use the template structure from `prompts/02-session-protocol.md` as reference
-   - Customize the "What This Is" section for this specific research
-   - Keep the directory layout table and rules generic
+   ## What This Is
+   <One sentence about the research question>
 
-4. **`state/next_action.md`** — First session bootstrap:
-   - Tell the first session to read all prompts, explore the data, and create an initial plan
+   ## First Thing Every Session
+   1. Read state/summary.md, state/journal.md, state/next_action.md, state/plan.md
+   2. Follow prompts/02-session-protocol.md
+
+   ## Prompt Files
+   - prompts/00-context.md — Problem background
+   - prompts/01-research-directions.md — Approaches to explore
+   - prompts/02-session-protocol.md — Session protocol (MUST FOLLOW)
+   - prompts/03-evaluation.md — Evaluation framework
+
+   ## Directory Layout
+   | Directory | Purpose |
+   |-----------|---------|
+   | src/ | Research code |
+   | data/ | Datasets |
+   | checkpoints/ | Model checkpoints |
+   | results/ | Evaluation results (JSON) |
+   | notes/ | Research notes |
+   | logs/ | Session logs (text + JSON) |
+   | state/ | Cross-session memory |
+   | prompts/ | Immutable instructions |
+   | scripts/ | Control scripts — DO NOT MODIFY |
+
+   ## Rules
+   - ONE objective per session
+   - Always read state before working, always update state after
+   - Use uv add / uv sync / uv remove for Python deps. Never uv pip install.
+   - Do NOT modify scripts/ or prompts/
+   ```
+
+4. **`state/next_action.md`** — Bootstrap the first session:
+   ```
+   # Next Action
+   This is the very first session. Do the following:
+   1. Read all prompt files in prompts/ to understand the project
+   2. Explore and download relevant data
+   3. Write up initial findings in notes/
+   4. Create a research plan in state/plan.md
+   5. Update the journal and write the next action
+
+   ## Context
+   <One sentence restating the research question>
+   ```
 
 ### 3c. Initialize Python project
 
 ```bash
 uv init --no-readme
-# Edit pyproject.toml: set name to project name, requires-python to ">=3.12"
+# Then edit pyproject.toml: set name to project slug, requires-python to ">=3.12"
 uv python pin 3.12
 ```
 
@@ -102,7 +129,7 @@ uv python pin 3.12
 mkdir -p state logs notes results checkpoints data src
 ```
 
-## Phase 4: Build and Start Container
+## Phase 4: Build and Start
 
 ```bash
 docker compose up -d --build
@@ -110,46 +137,32 @@ docker compose up -d --build
 
 ## Phase 5: Verify
 
-Run these checks inside the container (via `docker exec`):
+Run inside container via `docker exec`:
+1. `nvidia-smi` (skip if no GPU)
+2. `uv --version`
+3. `claude --version`
+4. Write permission test: `touch /workspace/state/_test && rm /workspace/state/_test`
 
-1. **GPU**: `nvidia-smi` (skip if no GPU)
-2. **uv**: `uv --version`
-3. **Python**: `uv run python --version`
-4. **Network**: `uv run python -c "import urllib.request; urllib.request.urlopen('https://huggingface.co'); print('OK')"`
-5. **Permissions**: `touch /workspace/state/_test && rm /workspace/state/_test`
-6. **Claude**: `claude --version`
+Report a brief summary table to the user.
 
-Report results to the user.
-
-## Phase 6: User Authentication
+## Phase 6: User Auth
 
 Tell the user:
 ```
-Container is ready. Please authenticate Claude inside it:
-
-  docker exec -it __PROJECT_NAME__-sandbox claude /login
-
+Container is ready. Authenticate Claude:
+  docker exec -it <project>-sandbox claude /login
 Let me know when done.
 ```
 
-Wait for confirmation, then run a quick test:
+After confirmation, test with:
 ```bash
-docker exec __PROJECT_NAME__-sandbox claude --dangerously-skip-permissions -p "Say hello" --output-format json
+docker exec <project>-sandbox claude --dangerously-skip-permissions -p "Say hello" --output-format json
 ```
 
-If it works, tell the user:
-
+Then tell the user how to start the loop:
 ```
-All set! To start the autonomous research loop:
-
-  docker exec __PROJECT_NAME__-sandbox tmux new -d -s research /workspace/loop.sh
-
-To watch it:
-  docker exec -it __PROJECT_NAME__-sandbox tmux attach -t research
-
-To stop it:
-  touch state/STOP
-
-To check status:
-  ./scripts/status.sh
+To start: docker exec <project>-sandbox tmux new -d -s research /workspace/loop.sh
+To watch: docker exec -it <project>-sandbox tmux attach -t research
+To stop:  touch state/STOP
+Status:   ./scripts/status.sh
 ```
