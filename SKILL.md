@@ -117,11 +117,24 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
 
 ### 3c. Initialize Python project
 
-```bash
-uv init --no-readme
-# Then edit pyproject.toml: set name to project slug, requires-python to ">=3.12"
-uv python pin 3.12
+Do NOT run uv on the host. Just write these two files directly:
+
+**`pyproject.toml`**:
+```toml
+[project]
+name = "<project-slug>"
+version = "0.1.0"
+description = "<one-line research description>"
+requires-python = ">=3.12"
+dependencies = []
 ```
+
+**`.python-version`**:
+```
+3.12
+```
+
+The container has uv installed. The first autonomous session will run `uv sync` inside the container.
 
 ### 3d. Create runtime directories
 
