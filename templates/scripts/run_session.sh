@@ -32,3 +32,14 @@ EXIT_CODE=${PIPESTATUS[0]}
 
 echo "" >> "$TEXT_LOG"
 echo "=== Session ended at $(date +%Y-%m-%d_%H-%M-%S) exit=${EXIT_CODE} ===" | tee -a "$TEXT_LOG"
+
+# Send report email if configured (subshell so API key doesn't leak to parent env)
+(
+  if [ -f "${WORKSPACE}/.env.email" ]; then
+    set -a && source "${WORKSPACE}/.env.email" && set +a
+    cd "${WORKSPACE}"
+    uv run python "${WORKSPACE}/src/send_report_email.py" 2>>"$TEXT_LOG" \
+      && echo "Report email sent" >> "$TEXT_LOG" \
+      || echo "Report email failed" >> "$TEXT_LOG"
+  fi
+)

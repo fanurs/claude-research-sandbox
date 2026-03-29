@@ -10,10 +10,19 @@ You are scaffolding a Docker sandbox for autonomous research. Your job is to get
 
 ## Phase 1: Ask the User
 
-In ONE message, ask:
-1. **"What is your research question?"**
-2. **Suggest a project name** (short slug like `smiles-retrieval`) and confirm.
-3. Only ask clarifying questions if truly ambiguous. Keep it brief.
+In ONE message, ask two things:
+
+1. **Research question** — "What is your research question?" Suggest a project name (short slug like `smiles-retrieval`) and confirm.
+
+2. **Email notifications** (optional) — "Want email reports when sessions finish?" If yes, ask:
+   - Email provider (default: Resend; also supports SendGrid, Mailgun, Postmark, or generic SMTP)
+   - Recipient email address
+   - Sender name and email (must be from a domain verified with their provider, e.g. `Your Name <noreply@yourdomain.com>`)
+   - Where is the API key stored? (e.g. `~/.secrets`, env var, etc.)
+
+   If the user declines, skip all email setup (Phase 3a email template, Phase 5b).
+
+Only ask additional clarifying questions if truly ambiguous. Keep it brief.
 
 Wait for answers before proceeding.
 
@@ -44,12 +53,29 @@ Mapping:
 - `templates/docker-compose.yml.template` → `docker-compose.yml`
 - `templates/loop.sh` → `loop.sh`
 - `templates/scripts/*` → `scripts/*`
+- `templates/src/send_report_email.py` → `src/send_report_email.py` (if email enabled)
 - `templates/prompts/*` → `prompts/*`
 - `templates/README.md` → `README.md`
 
 Make `loop.sh` and all `scripts/*.sh` executable.
 
 If NO GPU, remove the `deploy:` block from docker-compose.yml.
+
+**If email enabled:**
+
+In `src/send_report_email.py`, replace:
+- `__REPORT_EMAIL_TO__` → recipient email address
+- `__RESEND_FROM__` → sender name and email (e.g. `Automated Name <noreply@domain.com>`)
+
+If the provider is **not** Resend, also rewrite the `send_email()` function to use the chosen provider's API:
+- **SendGrid**: `https://api.sendgrid.com/v3/mail/send`, env var `SENDGRID_API_KEY`
+- **Mailgun**: `https://api.mailgun.net/v3/<domain>/messages`, env var `MAILGUN_API_KEY`
+- **Postmark**: `https://api.postmarkapp.com/email`, env var `POSTMARK_SERVER_TOKEN`
+- **SMTP**: use Python's `smtplib` instead of urllib, env vars `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
+
+The template ships with Resend as the default implementation. Adapt the API URL, headers, payload format, and env var name to match the chosen provider.
+
+Add `.env.email` to `.gitignore`.
 
 ### 3b. Generate lightweight research-specific files
 
@@ -159,6 +185,30 @@ Run inside container via `docker exec`:
 4. Write permission test: `touch /workspace/state/_test && rm /workspace/state/_test`
 
 Report a brief summary table to the user.
+
+## Phase 5b: Email Setup (if enabled)
+
+If the user wants email notifications:
+
+1. Create `.env.email` in the project directory with the provider's API key. The env var name depends on the provider:
+   - Resend: `RESEND_API_KEY`
+   - SendGrid: `SENDGRID_API_KEY`
+   - Mailgun: `MAILGUN_API_KEY`
+   - Postmark: `POSTMARK_SERVER_TOKEN`
+   - SMTP: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
+
+   Do NOT read or echo key values. Use a command like:
+   ```bash
+   source <secrets_file> && echo "RESEND_API_KEY=${RESEND_API_KEY}" > .env.email
+   ```
+   (Adjust the variable name for the chosen provider.)
+
+2. Test email from inside the container:
+   ```bash
+   docker exec -w /workspace <project>-sandbox bash -c 'set -a && source /workspace/.env.email && set +a && uv run python /workspace/src/send_report_email.py --test 2>&1'
+   ```
+
+3. Tell the user to check their inbox. If it fails, debug (common issue: Cloudflare blocks default urllib User-Agent — already handled in the script).
 
 ## Phase 6: User Auth
 

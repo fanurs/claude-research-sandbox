@@ -15,6 +15,7 @@ A Claude Code skill that creates autonomous research environments in Docker cont
 - **JSON logging**: Every session produces structured logs
 - **Safe controls**: Pause, resume, stop, cleanup scripts
 - **Dual-mode scripts**: Key scripts auto-detect whether you're on the host or inside the container
+- **Email notifications**: Optional session report emails with figure attachments (Resend, SendGrid, Mailgun, Postmark, or SMTP)
 
 ## Install
 
