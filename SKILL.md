@@ -45,6 +45,7 @@ Mapping:
 - `templates/loop.sh` → `loop.sh`
 - `templates/scripts/*` → `scripts/*`
 - `templates/prompts/*` → `prompts/*`
+- `templates/README.md` → `README.md`
 
 Make `loop.sh` and all `scripts/*.sh` executable.
 

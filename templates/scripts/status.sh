@@ -1,20 +1,40 @@
 #!/usr/bin/env bash
+# Show research loop status. Works from host or inside the container.
 set -euo pipefail
 
-echo "=== Container Status ==="
-docker inspect __PROJECT_NAME__-sandbox --format '{{.State.Status}}' 2>/dev/null || echo "Container not found"
+CONTAINER="__PROJECT_NAME__-sandbox"
+in_container() { [ -f /.dockerenv ]; }
+
+if in_container; then
+    echo "=== Running inside container ==="
+else
+    echo "=== Container Status ==="
+    docker inspect "$CONTAINER" --format '{{.State.Status}}' 2>/dev/null || echo "Container not found"
+fi
 
 echo ""
 echo "=== Tmux Sessions ==="
-docker exec __PROJECT_NAME__-sandbox tmux list-sessions 2>/dev/null || echo "No tmux sessions"
+if in_container; then
+    tmux list-sessions 2>/dev/null || echo "No tmux sessions"
+else
+    docker exec "$CONTAINER" tmux list-sessions 2>/dev/null || echo "No tmux sessions"
+fi
 
 echo ""
 echo "=== GPU Status ==="
-docker exec __PROJECT_NAME__-sandbox nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader 2>/dev/null || echo "No GPU or cannot reach container"
+if in_container; then
+    nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader 2>/dev/null || echo "No GPU"
+else
+    docker exec "$CONTAINER" nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader 2>/dev/null || echo "No GPU or cannot reach container"
+fi
 
 echo ""
 echo "=== Running Processes ==="
-docker exec __PROJECT_NAME__-sandbox ps aux --sort=-rss 2>/dev/null | head -20 || echo "Cannot reach container"
+if in_container; then
+    ps aux --sort=-rss 2>/dev/null | head -20 || echo "Cannot list processes"
+else
+    docker exec "$CONTAINER" ps aux --sort=-rss 2>/dev/null | head -20 || echo "Cannot reach container"
+fi
 
 echo ""
 echo "=== Stop Signal ==="

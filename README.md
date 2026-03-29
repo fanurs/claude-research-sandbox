@@ -14,6 +14,7 @@ A Claude Code skill that creates autonomous research environments in Docker cont
 - **Cross-session memory**: Journal, summary, plan, and next-action files persist between sessions
 - **JSON logging**: Every session produces structured logs
 - **Safe controls**: Pause, resume, stop, cleanup scripts
+- **Dual-mode scripts**: Key scripts auto-detect whether you're on the host or inside the container
 
 ## Install
 
@@ -29,23 +30,34 @@ In any project directory:
 /research-sandbox
 ```
 
-Claude will ask for your research question, set up the environment, and guide you through authentication. Then start the loop:
+Claude will ask for your research question, set up the environment, and build the container. Then:
 
-```bash
-docker exec <project>-sandbox tmux new -d -s research /workspace/loop.sh
-```
+1. **Authenticate Claude inside the container:**
+   ```bash
+   docker exec -it <project>-sandbox claude /login
+   ```
+
+2. **Start the research loop:**
+   ```bash
+   ./scripts/start-loop.sh
+   ```
 
 ### Controls
 
 | Action | Command |
 |--------|---------|
+| Build and start container | `./scripts/start.sh` |
+| Start the research loop | `./scripts/start-loop.sh` |
 | Watch the loop | `docker exec -it <project>-sandbox tmux attach -t research` |
+| Detach from tmux | `Ctrl+B` then `D` |
 | Stop after current session | `touch state/STOP` |
 | Pause container | `./scripts/pause.sh` |
 | Resume container | `./scripts/resume.sh` |
 | Check status | `./scripts/status.sh` |
-| Kill everything | `./scripts/cleanup.sh` |
 | Shell into container | `./scripts/shell.sh` |
+| Kill everything | `./scripts/cleanup.sh` |
+
+`start-loop.sh`, `status.sh`, and `cleanup.sh` work from both the host and inside the container.
 
 ## Requirements
 
@@ -69,11 +81,12 @@ State is managed through simple markdown files that serve as cross-session memor
 
 ```
 your-project/
-├── CLAUDE.md              # Project instructions for Claude
+├── README.md              # Framework usage guide (for humans)
+├── CLAUDE.md              # Project instructions (for Claude)
 ├── Dockerfile             # Ubuntu + uv + Claude CLI + tmux
 ├── docker-compose.yml     # Container config with GPU access
 ├── pyproject.toml         # Python project (managed by uv)
-├── loop.sh                # Session chainer
+├── loop.sh                # Session chainer (runs inside container)
 ├── scripts/               # Control scripts
 ├── prompts/               # Research context and protocol
 │   ├── 00-context.md      # Problem background (generated)
