@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Virtual environments
+.venv/
+
+# Secrets and config
+.env.email
+.research-config
+
+# Large/regenerable data
+/checkpoints/
+/data/
+/logs/
+
+# Internal state
+state/.session_counter
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+
+# Node (log viewer)
+node_modules/

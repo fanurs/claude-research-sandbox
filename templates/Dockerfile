@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     tini \
     tmux \
+    vim \
     wget \
     && rm -rf /var/lib/apt/lists/*
 

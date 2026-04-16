@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Send session report email.
-
-Default implementation uses the Resend API (https://resend.com).
-To use a different provider, replace the send_email() function:
-  - SendGrid: POST https://api.sendgrid.com/v3/mail/send
-  - Mailgun:  POST https://api.mailgun.net/v3/<domain>/messages
-  - Postmark: POST https://api.postmarkapp.com/email
-  - SMTP:     use smtplib instead of urllib
-Adjust the API URL, headers, payload format, and env var name accordingly.
-"""
+"""Send session report email via Resend API (https://resend.com)."""
 import base64
 import html as html_mod
 import json
@@ -21,6 +12,7 @@ from urllib.request import Request, urlopen
 
 RECIPIENT = os.environ.get("REPORT_EMAIL_TO", "__REPORT_EMAIL_TO__")
 FROM_ADDR = os.environ.get("RESEND_FROM", "__RESEND_FROM__")
+PROJECT_NAME = "__PROJECT_NAME__"
 
 
 def find_latest_report():
@@ -81,7 +73,7 @@ def send_email(subject, html_body, attachments=None):
 
 def send_test():
     return send_email(
-        subject="[Research] Test email",
+        subject=f"[Research: {PROJECT_NAME}] Test email",
         html_body=(
             "<p>This is a test email from the research sandbox.</p>"
             "<p>Email notifications are working.</p>"
@@ -115,7 +107,7 @@ def send_report(report_path=None):
         b64 = base64.b64encode(img.read_bytes()).decode()
         attachments.append({"filename": img.name, "content": b64})
 
-    subject = f"[Research] {report_path.stem}"
+    subject = f"[Research: {PROJECT_NAME}] {report_path.stem}"
     return send_email(subject, html_body, attachments or None)
 
 

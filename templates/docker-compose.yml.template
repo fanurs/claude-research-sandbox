@@ -15,8 +15,7 @@ services:
       - DAC_OVERRIDE
       - SETGID
       - SETUID
-    security_opt:
-      - no-new-privileges
+    # Note: no-new-privileges removed — it breaks NVML/GPU access inside container
     deploy:
       resources:
         reservations:

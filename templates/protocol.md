@@ -12,7 +12,7 @@ Read these files in order:
 
 If `state/next_action.md` exists and has content, that is your primary task.
 If it's empty or missing, consult `state/plan.md` and pick the next uncompleted item.
-If starting from scratch, read `prompts/01-research-directions.md` and begin with Priority 1.
+If starting from scratch, read `README.md` for research directions and begin with Priority 1.
 
 ## Step 2: Decide Scope
 
@@ -27,7 +27,17 @@ Write your chosen objective down (you'll log it in Step 5).
 
 ## Step 3: Do the Work
 
-- Write code in `/workspace/src/` (create it if needed)
+### Code organization
+- **Exploration code** goes in `playground/session-NN-<slug>/`
+  - Each exploration session gets its own self-contained directory
+  - Include a README.md explaining what was tried and what was learned
+  - Scripts, results, and figures are co-located in that directory
+- **Reusable code** goes in `src/`
+  - Only move code to `src/` when it has proven useful across multiple explorations
+  - Code in `src/` should have proper structure (functions, docstrings)
+  - Write tests in `tests/` for code in `src/`
+
+### Working
 - Use `uv add <package>` to add dependencies, `uv sync` to install them
 - Run experiments, read papers (via web), analyze data
 - Stay focused on your ONE objective
@@ -35,10 +45,12 @@ Write your chosen objective down (you'll log it in Step 5).
 
 ## Step 4: Save Artifacts
 
-- Code → `/workspace/src/`
-- Evaluation metrics → `/workspace/results/` (as JSON, see prompts/03-evaluation.md)
-- Model checkpoints → `/workspace/checkpoints/`
-- Figures → `/workspace/reports/figures/` (PNG/SVG, use matplotlib/seaborn)
+- Exploration code + results → `playground/session-NN-<slug>/`
+- Reusable library code → `src/`
+- Tests for src/ code → `tests/`
+- Evaluation metrics → `results/` (as JSON, see Evaluation Framework below)
+- Model checkpoints → `checkpoints/`
+- Figures for report → `reports/figures/` (PNG/SVG, use matplotlib/seaborn)
 
 ## Step 5: Write Report
 
@@ -77,7 +89,7 @@ What should the next session focus on and why?
 
 Even planning or exploration sessions should have a report — show what was learned, include any plots of data distributions, etc.
 
-## Step 6: Update State (ALWAYS do this before ending)
+## Step 6: Update State and Commit (ALWAYS do this before ending)
 
 ### 6a. Append to journal
 Add a brief entry to `state/journal.md`:
@@ -90,7 +102,7 @@ Add a brief entry to `state/journal.md`:
 ```
 
 ### 6b. Write next action
-Overwrite `state/next_action.md` with specific instructions for the next session:
+Overwrite `state/next_action.md` with specific, detailed instructions for the next session:
 ```
 # Next Action
 <Clear, actionable instruction for what to do next>
@@ -105,6 +117,13 @@ If your work changes the research direction or completes a milestone, update `st
 ### 6d. Compress if needed
 If `state/journal.md` has more than 15 entries, move the oldest entries' key points into `state/summary.md` and remove them from the journal. Keep the journal lean.
 
+### 6e. Commit changes
+```bash
+git add -A
+git commit -m "Session NN: <brief description of what was done>"
+```
+NEVER include Co-Authored-By lines or mention AI coauthorship in commits.
+
 ## Rules
 - ONE objective per session. Do it well.
 - Always read state before working. Always update state after working.
@@ -113,5 +132,56 @@ If `state/journal.md` has more than 15 entries, move the oldest entries' key poi
 - Prefer simple approaches. Earn complexity with evidence.
 - Don't repeat past work — check the journal and summary.
 - All Python deps via `uv add` / `uv sync` / `uv remove`. Never use `uv pip install`.
-- Don't modify files in `scripts/` or `prompts/`.
+- Don't modify `protocol.md` or files in `scripts/`.
+- You may update `README.md` as your understanding deepens.
 - If you discover something surprising, write it up in the report.
+
+---
+
+# Evaluation Framework
+
+## Defining Metrics
+
+Each research project should define its own primary metrics. Common patterns:
+
+- **Classification**: accuracy, precision, recall, F1, AUC-ROC
+- **Retrieval**: hit rate at K, MRR, nDCG, cosine similarity
+- **Generation**: BLEU, ROUGE, perplexity, human evaluation
+- **Regression**: MSE, MAE, R-squared
+
+Define your metrics in `state/plan.md` during the first session.
+
+## Tracking Results
+
+Save evaluation results as JSON in `results/`:
+```json
+{
+    "method": "method_name",
+    "date": "YYYY-MM-DD",
+    "metrics": {
+        "metric_1": 0.0,
+        "metric_2": 0.0
+    },
+    "config": {
+        "key_hyperparameters": "values"
+    },
+    "notes": "Brief description of the approach and any observations"
+}
+```
+
+## Comparing Results
+
+Maintain a results summary table in `notes/results_comparison.md`:
+```
+| Method | Metric 1 | Metric 2 | Date | Notes |
+|--------|----------|----------|------|-------|
+| Baseline | 0.XX | 0.XX | YYYY-MM-DD | Description |
+```
+
+## Success Criteria
+
+Define tiered success criteria in your research plan:
+- **Minimum viable**: Beat the simplest baseline
+- **Good**: Meaningful improvement over baseline
+- **Great**: Competitive with published methods
+- **Excellent**: Match or exceed state of the art

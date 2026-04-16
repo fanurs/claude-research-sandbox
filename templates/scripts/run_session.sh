@@ -10,23 +10,31 @@ JSON_LOG="${WORKSPACE}/logs/session_${TIMESTAMP}.json"
 
 echo "=== Session started at ${TIMESTAMP} ===" | tee "$TEXT_LOG"
 
+# Read config if available
+CONFIG_FILE="${WORKSPACE}/.research-config"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
 # The prompt tells Claude to follow the session protocol
 PROMPT="You are an autonomous research agent. Your working directory is /workspace.
 
-Follow the session protocol exactly:
+Follow protocol.md exactly:
 1. Read state files: state/summary.md, state/journal.md, state/next_action.md, state/plan.md
 2. Pick ONE objective for this session
 3. Do the work
 4. Update all state files before finishing (journal, next_action, plan if needed, summary if needed)
+5. Commit your changes
 
 Start now by reading your state files."
 
+# Build claude command with optional model/effort from config
+CLAUDE_ARGS=(--dangerously-skip-permissions -p "$PROMPT" --verbose --output-format stream-json)
+[ -n "${CLAUDE_MODEL:-}" ] && CLAUDE_ARGS+=(--model "$CLAUDE_MODEL")
+[ -n "${CLAUDE_EFFORT:-}" ] && CLAUDE_ARGS+=(--effort "$CLAUDE_EFFORT")
+
 # Run claude — stream NDJSON in real-time, save to file and show in tmux
-claude --dangerously-skip-permissions \
-  -p "$PROMPT" \
-  --verbose \
-  --output-format stream-json \
-  2>>"$TEXT_LOG" | tee "$JSON_LOG"
+claude "${CLAUDE_ARGS[@]}" 2>>"$TEXT_LOG" | tee "$JSON_LOG"
 
 EXIT_CODE=${PIPESTATUS[0]}
 

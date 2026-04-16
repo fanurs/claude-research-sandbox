@@ -5,14 +5,16 @@
 # To start:  tmux new -d -s research '/workspace/loop.sh'
 # To watch:  tmux attach -t research
 # To stop:   touch /workspace/state/STOP
+# To stop after session N:  echo "STOP-50" > /workspace/state/STOP
 # To detach: Ctrl+B then D
 set -euo pipefail
 
 WORKSPACE="/workspace"
 LOOP_LOG="${WORKSPACE}/logs/loop.log"
+COUNTER_FILE="${WORKSPACE}/state/.session_counter"
 
 # Ensure runtime dirs exist
-mkdir -p "${WORKSPACE}"/{state,logs,notes,results,checkpoints,data,src}
+mkdir -p "${WORKSPACE}"/{state,logs,notes,results,checkpoints,data,src,playground,reports/figures,tests}
 
 # Initialize state files if missing
 if [ ! -f "${WORKSPACE}/state/summary.md" ]; then
@@ -39,26 +41,48 @@ if [ ! -f "${WORKSPACE}/state/plan.md" ]; then
 EOF
 fi
 
-# Remove stale STOP file if present
-rm -f "${WORKSPACE}/state/STOP"
-
-SESSION_COUNT=0
+# Restore persistent session counter (absolute count across restarts)
+if [ -f "$COUNTER_FILE" ]; then
+    SESSION_COUNT=$(cat "$COUNTER_FILE")
+else
+    SESSION_COUNT=0
+fi
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOOP_LOG"
 }
 
+# Check if the loop should stop, supporting STOP and STOP-N patterns
+should_stop() {
+    [ ! -f "${WORKSPACE}/state/STOP" ] && return 1
+    local content
+    content=$(cat "${WORKSPACE}/state/STOP" 2>/dev/null | tr -d '[:space:]')
+    # Empty STOP file = stop now
+    [ -z "$content" ] && return 0
+    # STOP-N = stop when session count >= N
+    if [[ "$content" =~ ^STOP-([0-9]+)$ ]]; then
+        local target="${BASH_REMATCH[1]}"
+        [ "$SESSION_COUNT" -ge "$target" ] && return 0
+        log "STOP-${target} set. Currently at session ${SESSION_COUNT}. Continuing..."
+        return 1
+    fi
+    # Any other content = stop now
+    return 0
+}
+
 log "Research loop started. PID=$$"
 log "To stop: touch ${WORKSPACE}/state/STOP"
+log "To stop after N: echo 'STOP-50' > ${WORKSPACE}/state/STOP"
 
 while true; do
     # Check for stop signal
-    if [ -f "${WORKSPACE}/state/STOP" ]; then
-        log "STOP file detected. Exiting loop gracefully."
+    if should_stop; then
+        log "STOP signal detected. Exiting loop gracefully."
         break
     fi
 
     SESSION_COUNT=$((SESSION_COUNT + 1))
+    echo "$SESSION_COUNT" > "$COUNTER_FILE"
     log "========== Starting session #${SESSION_COUNT} =========="
 
     # Run one Claude session
@@ -66,9 +90,16 @@ while true; do
 
     log "========== Session #${SESSION_COUNT} finished =========="
 
+    # Safety-net: commit any uncommitted changes (in case Claude forgot)
+    cd "$WORKSPACE"
+    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        git add -A
+        git commit -m "Auto-commit after session #${SESSION_COUNT}" 2>/dev/null || true
+    fi
+
     # Check for stop signal after session
-    if [ -f "${WORKSPACE}/state/STOP" ]; then
-        log "STOP file detected after session. Exiting loop."
+    if should_stop; then
+        log "STOP signal detected after session. Exiting loop."
         break
     fi
 
@@ -77,4 +108,4 @@ while true; do
     sleep 10
 done
 
-log "Research loop ended. Total sessions: ${SESSION_COUNT}"
+log "Research loop ended. Total sessions this run: ${SESSION_COUNT}"
