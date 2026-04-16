@@ -82,7 +82,7 @@ State files in `state/` persist between sessions:
 | `README.md` | Project description, research goal, directions |
 | `CLAUDE.md` | Hard rules for the autonomous agent (~20 lines) |
 | `protocol.md` | Session protocol and evaluation framework (immutable) |
-| `playground/` | Exploration sessions (`playground/session-NN-slug/`) |
+| `playground/` | Exploration sessions (`playground/session-NNN-slug/`) |
 | `src/` | Reusable research code (extracted from playground) |
 | `tests/` | Tests for code in `src/` |
 | `data/` | Datasets |

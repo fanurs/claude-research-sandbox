@@ -14,7 +14,7 @@ A Claude Code skill that creates autonomous research environments in Docker cont
 - **Cross-session memory**: Journal, summary, plan, and next-action files persist between sessions
 - **Git integration**: Automatic commits after each session, `main` branch by default
 - **STOP-N**: Stop after N sessions (`echo "STOP-50" > state/STOP`)
-- **Playground pattern**: Exploration code in `playground/session-NN-slug/`, proven code in `src/`
+- **Playground pattern**: Exploration code in `playground/session-NNN-slug/`, proven code in `src/`
 - **Log viewer**: Web-based session viewer with real-time streaming (Express.js)
 - **JSON logging**: Every session produces structured NDJSON logs
 - **Safe controls**: Pause, resume, stop, cleanup scripts
@@ -112,7 +112,7 @@ your-project/
 │   ├── journal.md         # Recent session logs (working memory)
 │   ├── next_action.md     # Next session instructions
 │   └── plan.md            # Research roadmap
-├── playground/            # Exploration sessions (session-NN-slug/)
+├── playground/            # Exploration sessions (session-NNN-slug/)
 ├── src/                   # Reusable research code
 ├── tests/                 # Tests for src/
 ├── data/                  # Datasets

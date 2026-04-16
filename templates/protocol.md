@@ -28,7 +28,7 @@ Write your chosen objective down (you'll log it in Step 5).
 ## Step 3: Do the Work
 
 ### Code organization
-- **Exploration code** goes in `playground/session-NN-<slug>/`
+- **Exploration code** goes in `playground/session-NNN-<slug>/`
   - Each exploration session gets its own self-contained directory
   - Include a README.md explaining what was tried and what was learned
   - Scripts, results, and figures are co-located in that directory
@@ -45,7 +45,7 @@ Write your chosen objective down (you'll log it in Step 5).
 
 ## Step 4: Save Artifacts
 
-- Exploration code + results → `playground/session-NN-<slug>/`
+- Exploration code + results → `playground/session-NNN-<slug>/`
 - Reusable library code → `src/`
 - Tests for src/ code → `tests/`
 - Evaluation metrics → `results/` (as JSON, see Evaluation Framework below)
@@ -54,7 +54,7 @@ Write your chosen objective down (you'll log it in Step 5).
 
 ## Step 5: Write Report
 
-Write a research diary entry at `reports/YYYY-MM-DD_session-NN_<slug>.md` (where NN is a zero-padded session count from the journal). This is like presenting to your PI — clear, visual, honest.
+Write a research diary entry at `reports/YYYY-MM-DD_session-NNN_<slug>.md` (where NNN is the session count from the journal, zero-padded to **at least 3 digits**; once sessions reach 1000+, just use the full number — `session-1000`, `session-1234`, etc.). This is like presenting to your PI — clear, visual, honest.
 
 Structure:
 ```markdown
@@ -98,7 +98,7 @@ Add a brief entry to `state/journal.md`:
 **Objective**: What you set out to do
 **What was done**: Brief bullet points
 **Key findings**: Top insights or numbers
-**Report**: reports/YYYY-MM-DD_session-NN_<slug>.md
+**Report**: reports/YYYY-MM-DD_session-NNN_<slug>.md
 ```
 
 ### 6b. Write next action
@@ -120,7 +120,7 @@ If `state/journal.md` has more than 15 entries, move the oldest entries' key poi
 ### 6e. Commit changes
 ```bash
 git add -A
-git commit -m "Session NN: <brief description of what was done>"
+git commit -m "Session NNN: <brief description of what was done>"
 ```
 NEVER include Co-Authored-By lines or mention AI coauthorship in commits.
 

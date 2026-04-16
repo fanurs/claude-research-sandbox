@@ -8,47 +8,75 @@ user-invocable: true
 
 You are scaffolding a Docker sandbox for autonomous research. Your job is to get the container running FAST. Do NOT do deep research — the autonomous loop will handle that later.
 
-## Phase 1: Ask the User
+## Phase 1: Environment Probe (run BEFORE asking the user anything)
 
-In ONE message, ask these things:
-
-1. **Research question** — "What is your research question?" Suggest a project name (short slug like `smiles-retrieval`) and confirm.
-
-2. **Email notifications** (optional) — "Want email reports when sessions finish? (uses Resend)" If yes, ask:
-   - Recipient email address
-   - Sender name and email (must be from a domain verified with Resend, e.g. `Your Name <noreply@yourdomain.com>`)
-   - Where is the Resend API key stored? (e.g. `~/.secrets`, env var, etc.)
-
-   If the user declines, skip all email setup (Phase 3a email template, Phase 5b).
-
-3. **Git identity** — "What name and email for git commits inside the container?" Suggest the user's system git config if detectable via `git config user.name` / `git config user.email`.
-
-4. **Model preference** (optional) — "Which Claude model for sessions? (default: your default, or e.g. claude-opus-4-6)" and "Effort level? (default: unset, or low/medium/high/max)"
-
-5. **npm availability** — "Do you have npm on the host? (needed for the optional log viewer web UI)"
-
-Only ask additional clarifying questions if truly ambiguous. Keep it brief.
-
-Wait for answers before proceeding.
-
-## Phase 2: Environment Detection
-
-Run silently:
+Run silently and remember the results:
 ```bash
-HOST_UID=$(id -u) && echo "UID=$HOST_UID"
-HOST_GID=$(id -g) && echo "GID=$HOST_GID"
+id -u
+id -g
 docker --version
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "NO_GPU"
 dpkg -l | grep nvidia-container-toolkit 2>/dev/null || echo "NO_NVIDIA_TOOLKIT"
+git config --global user.name 2>/dev/null || echo ""
+git config --global user.email 2>/dev/null || echo ""
+command -v npm >/dev/null 2>&1 && echo "HAS_NPM" || echo "NO_NPM"
 ```
 
-If Docker is missing, stop. If no GPU, warn and continue (remove `deploy:` section from compose later).
+If Docker is missing, stop and report. If no GPU, warn the user (we remove `deploy:` from compose later). The git config and npm results are inputs to Phase 2 (Q2 branching) and Phase 5c (install decision) — do not ask the user for any of this.
+
+## Phase 2: Intake (verbatim)
+
+Send ONE message containing (a) a preview list of the questions, then (b) the questions themselves using the **exact wording** written below. Do not paraphrase, reorder, summarize, or soften. The only permitted variation is the conditional branch in Q3 (git identity), chosen from the Phase 1 probe. If the user answers partially, re-ask only the missing pieces, still verbatim.
+
+Opening preview (show this first, verbatim):
+
+> Before I start, here's what I'll ask you (5 items):
+> 1. Research question + project slug
+> 2. Where to scaffold (new subdirectory / here / custom path)
+> 3. Git identity inside the container
+> 4. Email notifications (optional)
+> 5. Model and effort preference (optional)
+>
+> Answer in one message; anything missing I'll re-ask.
+
+Then the questions (verbatim):
+
+> **1. Research question.** What is your research question?
+> I suggest the project slug `<propose a short kebab-case slug>` — OK, or what would you prefer?
+>
+> **2. Scaffold location.** Where should I put the project?
+> - `subdir` (default) — create `./<slug>/` under your current directory and scaffold inside it.
+> - `here` — scaffold directly into your current directory (`<absolute cwd path>`).
+> - or give me an absolute or relative path — I'll create it if it doesn't exist.
+>
+> **3. Git identity (inside the container).**
+> [If BOTH `user.name` and `user.email` were detected on the host, use exactly this line:]
+> I detected `<NAME> <EMAIL>` from your host git config. Use this inside the container? (yes — or supply an alternate name + email.)
+> [Otherwise, use exactly this line:]
+> No git identity found on the host. What name and email should I use for commits inside the container?
+>
+> **4. Email notifications (optional).** Want end-of-session report emails via Resend? (yes/no)
+> If yes: recipient email? Sender name + address (must be on a Resend-verified domain, e.g. `Your Name <noreply@yourdomain.com>`)?
+>
+> **5. Model / effort (optional).** Which Claude model for sessions? (Press Enter for default, or e.g. `claude-opus-4-6`.) Effort level? (Press Enter for unset, or one of: low / medium / high / max.)
+
+Wait for all answers before proceeding to Phase 3.
 
 ## Phase 3: Scaffold
 
+### 3.0. Enter target directory (based on Q2 answer)
+
+Before writing anything, resolve the scaffold location and `cd` into it. All subsequent paths in Phase 3+ are relative to this target directory.
+
+- **`subdir` (default)**: `mkdir <slug> && cd <slug>`. If `./<slug>/` already exists and is non-empty, STOP and ask the user: different slug? delete existing? proceed anyway? Wait for an answer before continuing.
+- **`here`**: stay in the current working directory. If it's non-empty (anything other than `.git/` and hidden dotfiles), show the user the existing top-level entries and ask for explicit confirmation before proceeding. If it's already a git repo, warn that you'll be running `git init` / adding files on top.
+- **Custom path** (absolute or relative): `mkdir -p <path> && cd <path>`. Apply the same non-empty check as `here`.
+
+Report the resolved absolute path back to the user in one line (e.g. `Scaffolding into: /home/you/projects/<slug>`) so they can confirm mentally before the scaffold runs.
+
 ### 3a. Copy templates with substitution
 
-Read each file from `${CLAUDE_SKILL_DIR}/templates/` and write it to the current directory, replacing:
+Read each file from `${CLAUDE_SKILL_DIR}/templates/` and write it to the current directory (the target from Phase 3.0), replacing:
 - `__PROJECT_NAME__` → project slug
 - `__UID__` → host UID
 - `__GID__` → host GID
@@ -101,8 +129,8 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
    - Use `uv add` / `uv sync` / `uv remove` for Python deps — NEVER `uv pip install`
    - Always use GPU. If `torch.cuda.is_available()` is False, STOP.
    - Estimate VRAM before training
-   - All exploration code goes in `playground/session-NN-slug/` — only proven code moves to `src/`
-   - After completing work, commit with `git add -A && git commit -m "Session NN: <desc>"`
+   - All exploration code goes in `playground/session-NNN-slug/` (session number zero-padded to at least 3 digits; 1000+ just uses the full number)
+   - After completing work, commit with `git add -A && git commit -m "Session NNN: <desc>"`
    - NEVER include Co-Authored-By lines or mention AI coauthorship in commits
    - Do NOT modify protocol.md or scripts/
    - You may update README.md as understanding deepens (research directions, findings, etc.)
@@ -191,37 +219,57 @@ docker exec __PROJECT_NAME__-sandbox git config --global user.email "<email>"
 
 ### 5b. Email Setup (if enabled)
 
-CRITICAL: Never read, print, or echo `.env.email` contents. Trust the user set it up correctly.
+The skill **never touches the user's API key.** Generate a stub file in the project directory (NOT from `templates/` — that would put a secret-shaped file in the skill repo) and hand off to the user to fill in.
 
-1. Create `.env.email` in the project directory with the Resend API key:
+1. Create `.env.email` with a placeholder and short setup guide, then lock permissions:
    ```bash
-   source <secrets_file> && echo "RESEND_API_KEY=${RESEND_API_KEY}" > .env.email
-   ```
-   Do NOT read or echo key values.
+   cat > .env.email <<'EOF'
+   RESEND_API_KEY=REPLACE_THIS_WITHOUT_ANY_QUOTE
 
-2. Test email from inside the container:
+   # How to get a Resend API key (rough guide — see https://resend.com/docs for anything tricky):
+   # 1. Sign up at https://resend.com and create an API key from the dashboard.
+   # 2. Add + verify your sending domain (Resend → Domains → Add Domain; follow DNS steps).
+   # 3. Paste the key above, replacing REPLACE_THIS_WITHOUT_ANY_QUOTE.
+   #    No quotes, no trailing spaces, no repeated `RESEND_API_KEY=` prefix.
+   # 4. Make sure the sender address you configured during setup uses that verified domain.
+   #
+   # This file is gitignored and chmod 400 — keep it that way.
+   EOF
+   chmod 400 .env.email
+   ```
+
+   Do NOT read or echo this file after creation.
+
+2. Tell the user (verbatim):
+   > I created `.env.email` with a placeholder. Open it, replace `REPLACE_THIS_WITHOUT_ANY_QUOTE` with your actual Resend API key, then let me know — I'll run a test send.
+
+3. Wait for confirmation. Then test from inside the container:
    ```bash
    docker exec -w /workspace __PROJECT_NAME__-sandbox bash -c 'set -a && source /workspace/.env.email && set +a && uv run python /workspace/src/send_report_email.py --test 2>&1'
    ```
 
-3. Ask the user: "Did you receive the test email?" If it fails, debug — but do NOT read `.env.email` during debugging. Check error messages from the script output only.
+4. Ask: "Did you receive the test email?" If it fails, debug **without reading `.env.email`** — rely on stderr from the script only.
 
-### 5c. Log Viewer Setup (if npm available)
+### 5c. Log Viewer Setup (auto-detect, do not ask)
 
-If the user has npm on the host:
-```bash
-cd tools/viewer && npm install
-```
+Use the `HAS_NPM` / `NO_NPM` result from the Phase 1 probe. Do not ask the user.
 
-Tell the user:
-```
-Log viewer installed. To watch sessions in your browser:
-  cd tools/viewer && npm start
-Then open http://localhost:3000
+- If `HAS_NPM`: run `cd tools/viewer && npm install`, then tell the user:
+  ```
+  Log viewer installed. To watch sessions in your browser:
+    cd tools/viewer && npm start
+  Then open http://localhost:3000
 
-The viewer runs on the HOST (not inside the container).
-It reads log files from the bind-mounted logs/ directory.
-```
+  The viewer runs on the HOST (not inside the container).
+  It reads log files from the bind-mounted logs/ directory.
+  ```
+
+- If `NO_NPM`: skip the install silently. Tell the user:
+  ```
+  npm wasn't found on the host, so the log viewer is skipped.
+  If you want it later: install Node.js/npm, then run
+    cd tools/viewer && npm install && npm start
+  ```
 
 ## Phase 6: User Auth
 
