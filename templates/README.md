@@ -56,6 +56,16 @@ Each Claude session follows a strict protocol (see `protocol.md`):
 
 Sessions chain automatically. Between sessions, the loop checks for a `state/STOP` file — if present, it exits gracefully. Use `./scripts/stop.sh N` to stop after a specific session number.
 
+## Terminology
+
+Three nested units of work (full definitions in `protocol.md`):
+
+- **Research session** (*session*) — one iteration of the protocol (orient → work → report → commit).
+- **Research thread** (*thread*) — a coherent objective split across multiple sessions because it didn't fit in one. The split is mechanical, not a change of plan.
+- **Research shift** (*shift*) — one continuous run of the loop, from `./scripts/start-loop.sh` until STOP. May contain multiple threads and many sessions.
+
+Use these terms when steering Claude: *"S3–S5 are one thread — don't restart"*, *"this shift ends at S10"*, etc.
+
 ## Providing Direction
 
 You can steer the research without stopping the loop:
