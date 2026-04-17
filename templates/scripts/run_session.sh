@@ -46,7 +46,7 @@ echo "=== Session ended at $(date +%Y-%m-%d_%H-%M-%S) exit=${EXIT_CODE} ===" | t
   if [ -f "${WORKSPACE}/.env.email" ]; then
     set -a && source "${WORKSPACE}/.env.email" && set +a
     cd "${WORKSPACE}"
-    uv run python "${WORKSPACE}/src/send_report_email.py" 2>>"$TEXT_LOG" \
+    uv run python "${WORKSPACE}/scripts/send_report_email.py" 2>>"$TEXT_LOG" \
       && echo "Report email sent" >> "$TEXT_LOG" \
       || echo "Report email failed" >> "$TEXT_LOG"
   fi

@@ -88,7 +88,7 @@ Mapping:
 - `templates/protocol.md` → `protocol.md`
 - `templates/.gitignore` → `.gitignore`
 - `templates/scripts/*` → `scripts/*`
-- `templates/src/send_report_email.py` → `src/send_report_email.py` (if email enabled)
+- `templates/scripts/send_report_email.py` → `scripts/send_report_email.py` (if email enabled)
 - `templates/tools/viewer/*` → `tools/viewer/*`
 - `templates/README.md` → `README.md`
 
@@ -98,7 +98,7 @@ If NO GPU, remove the `deploy:` block from docker-compose.yml.
 
 **If email enabled:**
 
-In `src/send_report_email.py`, replace:
+In `scripts/send_report_email.py`, replace:
 - `__REPORT_EMAIL_TO__` → recipient email address
 - `__RESEND_FROM__` → sender name and email (e.g. `Automated Name <noreply@domain.com>`)
 
@@ -240,7 +240,7 @@ The skill **never touches the user's API key.** Generate a stub file in the proj
 
 3. Wait for confirmation. Then test from inside the container:
    ```bash
-   docker exec -w /workspace __PROJECT_NAME__-sandbox bash -c 'set -a && source /workspace/.env.email && set +a && uv run python /workspace/src/send_report_email.py --test 2>&1'
+   docker exec -w /workspace __PROJECT_NAME__-sandbox bash -c 'set -a && source /workspace/.env.email && set +a && uv run python /workspace/scripts/send_report_email.py --test 2>&1'
    ```
 
 4. Ask: "Did you receive the test email?" If it fails, debug **without reading `.env.email`** — rely on stderr from the script only.
