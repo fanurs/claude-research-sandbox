@@ -21,6 +21,7 @@ wheels/
 
 # Internal state
 state/.session_counter
+state/STOP
 
 # OS
 .DS_Store

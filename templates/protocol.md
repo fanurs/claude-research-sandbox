@@ -29,6 +29,7 @@ Write your chosen objective down (you'll log it in Step 5).
 
 ### Code organization
 - **Exploration code** goes in `playground/session-NNN-<slug>/`
+  - `NNN` is the session number, zero-padded to at least 3 digits; 1000+ uses the full number (e.g. `session-1234`)
   - Each exploration session gets its own self-contained directory
   - Include a README.md explaining what was tried and what was learned
   - Scripts, results, and figures are co-located in that directory
@@ -51,6 +52,11 @@ Write your chosen objective down (you'll log it in Step 5).
 - Evaluation metrics → `results/` (as JSON, see Evaluation Framework below)
 - Model checkpoints → `checkpoints/`
 - Figures for report → `reports/figures/` (PNG/SVG, use matplotlib/seaborn)
+
+### What to commit
+- Commit source, configs, summaries, and report figures (`reports/figures/`).
+- Do NOT commit: raw downloaded data (PDFs, datasets), generated extractions, model checkpoints/weights, logs, or caches.
+- If a regenerable artifact lands in a tracked path, add the pattern to `.gitignore` rather than committing it. Bloating git history with re-downloadable files is a permanent cost.
 
 ## Step 5: Write Report
 
@@ -125,12 +131,13 @@ git commit -m "Session NNN: <brief description of what was done>"
 NEVER include Co-Authored-By lines or mention AI coauthorship in commits.
 
 ## Rules
-- ONE objective per session. Do it well.
+- ONE objective per session = the objective in `state/next_action.md`. Follow `state/plan.md` and `state/next_action.md` closely; do not preemptively start the next planned item.
 - Always read state before working. Always update state after working.
 - ALWAYS write a report, even for planning sessions.
 - Generate plots whenever there is data to visualize.
 - Prefer simple approaches. Earn complexity with evidence.
 - Don't repeat past work — check the journal and summary.
+- Don't commit binary files (PDFs, images, model weights, tarballs) or large generated text artifacts. Add them to `.gitignore` if they land in a tracked path. Report figures in `reports/figures/` are the exception.
 - All Python deps via `uv add` / `uv sync` / `uv remove`. Never use `uv pip install`.
 - Don't modify `protocol.md` or files in `scripts/`.
 - You may update `README.md` as your understanding deepens.
@@ -171,7 +178,7 @@ Save evaluation results as JSON in `results/`:
 
 ## Comparing Results
 
-Maintain a results summary table in `notes/results_comparison.md`:
+Maintain a results summary table in `results/results_comparison.md`:
 ```
 | Method | Metric 1 | Metric 2 | Date | Notes |
 |--------|----------|----------|------|-------|

@@ -24,8 +24,8 @@ docker exec -it __PROJECT_NAME__-sandbox claude /login
 | Watch (web UI) | `cd tools/viewer && npm start` → http://localhost:3000 |
 | Watch (raw tmux) | `docker exec -it __PROJECT_NAME__-sandbox tmux attach -t research` |
 | Detach from tmux | `Ctrl+B` then `D` |
-| Stop after current session | `touch state/STOP` |
-| Stop after session N | `echo "STOP-50" > state/STOP` |
+| Stop after current session | `./scripts/stop.sh` |
+| Stop after session N | `./scripts/stop.sh 50` |
 | Check status | `./scripts/status.sh` |
 | Pause container | `./scripts/pause.sh` |
 | Resume container | `./scripts/resume.sh` |
@@ -54,7 +54,7 @@ Each Claude session follows a strict protocol (see `protocol.md`):
 5. **Commit** — Git commit all changes
 6. **Handoff** — Update journal, write next action for the following session
 
-Sessions chain automatically. Between sessions, the loop checks for a `state/STOP` file — if present, it exits gracefully. Use `STOP-N` (e.g. `echo "STOP-50" > state/STOP`) to stop after a specific session number.
+Sessions chain automatically. Between sessions, the loop checks for a `state/STOP` file — if present, it exits gracefully. Use `./scripts/stop.sh N` to stop after a specific session number.
 
 ## Providing Direction
 
@@ -62,7 +62,7 @@ You can steer the research without stopping the loop:
 
 - **Edit `state/next_action.md`** to tell the next session what to focus on. Changes take effect when the next session starts.
 - **Edit `README.md`** (the research directions section) to change high-level research priorities.
-- **Create `state/STOP`** to stop the loop after the current session finishes, then edit state files and restart with `./scripts/start-loop.sh`.
+- **Run `./scripts/stop.sh`** to stop the loop after the current session finishes, then edit state files and restart with `./scripts/start-loop.sh`.
 
 ## Cross-Session Memory
 
@@ -87,8 +87,7 @@ State files in `state/` persist between sessions:
 | `tests/` | Tests for code in `src/` |
 | `data/` | Datasets |
 | `checkpoints/` | Model checkpoints |
-| `results/` | Evaluation results (JSON) |
-| `notes/` | Research notes |
+| `results/` | Evaluation results (JSON) and cross-experiment comparison tables |
 | `reports/` | Session reports with figures (research diary) |
 | `logs/` | Session logs (text + JSON) |
 | `state/` | Cross-session memory |
@@ -105,6 +104,7 @@ State files in `state/` persist between sessions:
 
 **Dual-mode** (auto-detect host vs container, work from either):
 - `scripts/start-loop.sh` — Start the research loop
+- `scripts/stop.sh [N]` — Stop the loop (after current session, or at session N)
 - `scripts/status.sh` — Show status (GPU, processes, tmux, stop signal)
 - `scripts/cleanup.sh` — Kill all research processes
 

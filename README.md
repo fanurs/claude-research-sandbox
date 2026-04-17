@@ -119,8 +119,7 @@ your-project/
 ├── checkpoints/           # Model checkpoints
 ├── reports/               # Session reports with figures (research diary)
 │   └── figures/           # Plots and visualizations
-├── results/               # Evaluation results (JSON)
-├── notes/                 # Research notes
+├── results/               # Evaluation results (JSON) + comparison tables
 └── logs/                  # Session logs (text + JSON)
 ```
 

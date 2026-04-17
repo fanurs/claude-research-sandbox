@@ -4,8 +4,8 @@
 #
 # To start:  tmux new -d -s research '/workspace/loop.sh'
 # To watch:  tmux attach -t research
-# To stop:   touch /workspace/state/STOP
-# To stop after session N:  echo "STOP-50" > /workspace/state/STOP
+# To stop:                 /workspace/scripts/stop.sh
+# To stop after session N: /workspace/scripts/stop.sh 50
 # To detach: Ctrl+B then D
 set -euo pipefail
 
@@ -14,7 +14,7 @@ LOOP_LOG="${WORKSPACE}/logs/loop.log"
 COUNTER_FILE="${WORKSPACE}/state/.session_counter"
 
 # Ensure runtime dirs exist
-mkdir -p "${WORKSPACE}"/{state,logs,notes,results,checkpoints,data,src,playground,reports/figures,tests}
+mkdir -p "${WORKSPACE}"/{state,logs,results,checkpoints,data,src,playground,reports/figures,tests}
 
 # Initialize state files if missing
 if [ ! -f "${WORKSPACE}/state/summary.md" ]; then
@@ -54,6 +54,17 @@ log() {
 
 # Check if the loop should stop, supporting STOP and STOP-N patterns
 should_stop() {
+    # Defensive: also accept a literal filename pattern state/STOP-N
+    # (easy to create by mistake instead of writing "STOP-N" into state/STOP).
+    local f name target
+    for f in "${WORKSPACE}"/state/STOP-*; do
+        [ -e "$f" ] || continue
+        name="${f##*/STOP-}"
+        if [[ "$name" =~ ^[0-9]+$ ]] && [ "$SESSION_COUNT" -ge "$name" ]; then
+            return 0
+        fi
+    done
+
     [ ! -f "${WORKSPACE}/state/STOP" ] && return 1
     local content
     content=$(cat "${WORKSPACE}/state/STOP" 2>/dev/null | tr -d '[:space:]')
@@ -61,7 +72,7 @@ should_stop() {
     [ -z "$content" ] && return 0
     # STOP-N = stop when session count >= N
     if [[ "$content" =~ ^STOP-([0-9]+)$ ]]; then
-        local target="${BASH_REMATCH[1]}"
+        target="${BASH_REMATCH[1]}"
         [ "$SESSION_COUNT" -ge "$target" ] && return 0
         log "STOP-${target} set. Currently at session ${SESSION_COUNT}. Continuing..."
         return 1
@@ -71,8 +82,8 @@ should_stop() {
 }
 
 log "Research loop started. PID=$$"
-log "To stop: touch ${WORKSPACE}/state/STOP"
-log "To stop after N: echo 'STOP-50' > ${WORKSPACE}/state/STOP"
+log "To stop: ${WORKSPACE}/scripts/stop.sh"
+log "To stop after N: ${WORKSPACE}/scripts/stop.sh 50"
 
 while true; do
     # Check for stop signal

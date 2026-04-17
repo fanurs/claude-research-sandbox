@@ -119,21 +119,17 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
    - Known state of the art (rough, from your knowledge)
    - Then keep all the framework sections from the template (Quick Start, Controls, etc.)
 
-2. **`CLAUDE.md`** — Hard rules only, ~20 lines:
+2. **`CLAUDE.md`** — Hard runtime rules only (session-workflow rules live in `protocol.md`):
    ```
    # Hard Rules
 
-   - You are running inside Docker at /workspace
-   - Follow protocol.md every session (orient → scope → work → report → commit → handoff)
-   - ONE objective per session
-   - Use `uv add` / `uv sync` / `uv remove` for Python deps — NEVER `uv pip install`
+   - You are running inside Docker at `/workspace`
+   - Follow `protocol.md` every session — it defines the workflow, code organization, commit format, and session rules
    - Always use GPU. If `torch.cuda.is_available()` is False, STOP.
    - Estimate VRAM before training
-   - All exploration code goes in `playground/session-NNN-slug/` (session number zero-padded to at least 3 digits; 1000+ just uses the full number)
-   - After completing work, commit with `git add -A && git commit -m "Session NNN: <desc>"`
    - NEVER include Co-Authored-By lines or mention AI coauthorship in commits
-   - Do NOT modify protocol.md or scripts/
-   - You may update README.md as understanding deepens (research directions, findings, etc.)
+   - Do NOT modify `protocol.md` or `scripts/`
+   - You may update `README.md` as understanding deepens
    ```
 
 3. **`state/next_action.md`** — Bootstrap the first session:
@@ -142,9 +138,8 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
    This is the very first session. Do the following:
    1. Read README.md and protocol.md to understand the project and session protocol
    2. Explore and download relevant data
-   3. Write up initial findings in notes/
-   4. Create a research plan in state/plan.md
-   5. Update the journal and write the next action
+   3. Create a research plan in state/plan.md IF one doesn't already exist; otherwise treat the existing plan as your source of truth and do not overwrite it
+   4. Update the journal and write the next action
 
    ## Context
    <One sentence restating the research question>
@@ -174,7 +169,7 @@ The container has uv installed. The first autonomous session will run `uv sync` 
 ### 3d. Create runtime directories
 
 ```bash
-mkdir -p state logs notes results checkpoints data src playground reports/figures tests
+mkdir -p state logs results checkpoints data src playground reports/figures tests
 ```
 
 ### 3e. Write config (if model/effort specified)
@@ -292,8 +287,8 @@ All set! To start the autonomous research loop:
 
 To watch (web UI):  cd tools/viewer && npm start → http://localhost:3000
 To watch (raw):     docker exec -it __PROJECT_NAME__-sandbox tmux attach -t research
-To stop:            touch state/STOP
-To stop after N:    echo "STOP-50" > state/STOP
+To stop:            ./scripts/stop.sh
+To stop after N:    ./scripts/stop.sh 50
 Status:             ./scripts/status.sh
 Reports:            ls reports/
 ```
