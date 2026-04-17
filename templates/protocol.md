@@ -8,7 +8,7 @@ Three nested units of work. The human user may refer to them with or without the
 
 - **Research session** (*session*) — one atomic iteration of this protocol: orient → scope → work → report → commit → handoff. Bounded by context capacity, not by a natural unit of work.
 - **Research thread** (*thread*) — a coherent objective that spans multiple sessions because it didn't fit in one. The split is mechanical (context ran out), not a change of plan. When a session continues a thread, treat prior-session work on that thread as first-class context and do not restart from scratch.
-- **Research shift** (*shift*) — the continuous run of the loop from `./scripts/start-loop.sh` until STOP is detected. One shift may contain multiple threads and many sessions; one thread may span multiple shifts.
+- **Research shift** (*shift*) — the continuous run of the loop from `./scripts/start-loop.sh` until STOP is detected. One shift may contain multiple threads and many sessions; one thread may span multiple shifts. A shift's planned scope may be bracketed in `state/plan.md` with `[START OF RESEARCH SHIFT]` / `[END OF RESEARCH SHIFT]` markers — when present, the last session of the shift is responsible for stopping the loop (see Step 6f).
 
 ## Step 1: Orient (ALWAYS do this first)
 
@@ -137,6 +137,9 @@ git add -A
 git commit -m "Session NNN: <brief description of what was done>"
 ```
 NEVER include Co-Authored-By lines or mention AI coauthorship in commits.
+
+### 6f. End the shift if the planned scope is exhausted
+If `state/plan.md` brackets this shift's scope with `[START OF RESEARCH SHIFT]` / `[END OF RESEARCH SHIFT]` markers, check whether every thread between those markers is now complete. If so, run `./scripts/stop.sh` to end the loop gracefully — otherwise the loop will keep spinning on exhausted goals until a human intervenes. If the plan has no markers, skip this step.
 
 ## Rules
 - ONE objective per session = the objective in `state/next_action.md`. Follow `state/plan.md` and `state/next_action.md` closely; do not preemptively start the next planned item.
