@@ -57,7 +57,7 @@ Write your chosen objective down (you'll log it in Step 5).
 - Exploration code + results → `playground/session-NNN-<slug>/`
 - Reusable library code → `src/`
 - Tests for src/ code → `tests/`
-- Evaluation metrics → `results/` (as JSON, see Evaluation Framework below)
+- Evaluation metrics from the **main pipeline** (code in `src/`) → `results/` (as JSON, see Evaluation Framework below). Per-session exploratory metrics stay in `playground/session-NNN-<slug>/` alongside the code that produced them — do not scatter them into `results/`.
 - Model checkpoints → `checkpoints/`
 - Figures for report → `reports/figures/` (PNG/SVG, use matplotlib/seaborn)
 
@@ -171,7 +171,7 @@ Define your metrics in `state/plan.md` during the first session.
 
 ## Tracking Results
 
-Save evaluation results as JSON in `results/`:
+For main-pipeline runs (code in `src/`), save evaluation results as JSON in `results/`. For per-session exploratory runs, save the same JSON shape inside `playground/session-NNN-<slug>/`:
 ```json
 {
     "method": "method_name",
@@ -189,7 +189,7 @@ Save evaluation results as JSON in `results/`:
 
 ## Comparing Results
 
-Maintain a results summary table in `results/results_comparison.md`:
+Once the main pipeline in `src/` is running, maintain a cross-experiment summary table in `results/results_comparison.md`. Until then, comparison tables live inside the relevant session's `findings.md`:
 ```
 | Method | Metric 1 | Metric 2 | Date | Notes |
 |--------|----------|----------|------|-------|

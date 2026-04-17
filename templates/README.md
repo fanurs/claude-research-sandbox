@@ -97,7 +97,7 @@ State files in `state/` persist between sessions:
 | `tests/` | Tests for code in `src/` |
 | `data/` | Datasets |
 | `checkpoints/` | Model checkpoints |
-| `results/` | Evaluation results (JSON) and cross-experiment comparison tables |
+| `results/` | Main-pipeline evaluation outputs (from `src/`); per-session metrics stay with the session in `playground/session-NNN-*/` |
 | `reports/` | Session reports with figures (research diary) |
 | `logs/` | Session logs (text + JSON) |
 | `state/` | Cross-session memory |
