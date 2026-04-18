@@ -126,6 +126,7 @@ Write these based on your existing knowledge — do NOT do web searches. Keep th
    - You are running inside Docker at `/workspace`
    - Follow `protocol.md` every session — it defines the workflow, code organization, commit format, and session rules
    - Re-read `state/plan.md` at the end of every session to decide where you stand: stay within the shift's threads (adding sub-tasks to an existing thread is fine, inventing new threads is drift) and run `./scripts/stop.sh` once all threads in the shift are complete
+   - Threads in `state/plan.md` are executed in numerical order (T1 → T2 → T3 → …). Do not start a later thread until every `[ ]` in lower-numbered threads within the shift's brackets is ticked. The numbering IS the order.
    - Always use GPU. If `torch.cuda.is_available()` is False, STOP.
    - Estimate VRAM before training
    - NEVER include Co-Authored-By lines or mention AI coauthorship in commits
